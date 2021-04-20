@@ -146,7 +146,7 @@ jobs:
                     -secondary-kubecontext="kind-dc2" \
                     -debug-directory="$TEST_RESULTS/debug" \
                     -consul-image="hashicorp/consul-enterprise:1.10.0-ent-beta1" \
-                    -consul-k8s-image="ashwinvenkatesh/consul-k8s@sha256:3b1ebe58b271074c03f5c87c1c1d4cb95e419778b8c3eba04490e1c5a509d2a4"
+                    -consul-k8s-image="ashwinvenkatesh/consul-k8s@sha256:2ddc71419fc4671af367e90dfbe924b9a2141e9dfbcc9b10a491c49c166b4dc7"
               then
                 echo "Tests in ${pkg} failed, aborting early"
                 exit_code=1

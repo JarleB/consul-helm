@@ -93,6 +93,13 @@ func TestController(t *testing.T) {
 					require.True(r, ok, "could not cast to ProxyConfigEntry")
 					require.Equal(r, api.MeshGatewayModeLocal, proxyDefaultEntry.MeshGateway.Mode)
 
+					// mesh
+					entry, _, err = consulClient.ConfigEntries().Get(api.MeshConfig, "mesh", nil)
+					require.NoError(r, err)
+					meshEntry, ok := entry.(*api.MeshConfigEntry)
+					require.True(r, ok, "could not cast to MeshConfigEntry")
+					require.True(r, meshEntry.TransparentProxy.CatalogDestinationsOnly)
+
 					// service-router
 					entry, _, err = consulClient.ConfigEntries().Get(api.ServiceRouter, "router", nil)
 					require.NoError(r, err)
@@ -154,6 +161,9 @@ func TestController(t *testing.T) {
 				patchMeshGatewayMode := "remote"
 				k8s.RunKubectl(t, ctx.KubectlOptions(t), "patch", "proxydefaults", "global", "-p", fmt.Sprintf(`{"spec":{"meshGateway":{"mode": "%s"}}}`, patchMeshGatewayMode), "--type=merge")
 
+				logger.Log(t, "patching mesh custom resource")
+				k8s.RunKubectl(t, ctx.KubectlOptions(t), "patch", "mesh", "mesh", "-p", fmt.Sprintf(`{"spec":{"transparentProxy":{"catalogDestinationsOnly": %t}}}`, false), "--type=merge")
+
 				logger.Log(t, "patching service-router custom resource")
 				patchPathPrefix := "/baz"
 				k8s.RunKubectl(t, ctx.KubectlOptions(t), "patch", "servicerouter", "router", "-p", fmt.Sprintf(`{"spec":{"routes":[{"match":{"http":{"pathPrefix":"%s"}}}]}}`, patchPathPrefix), "--type=merge")
@@ -194,6 +204,13 @@ func TestController(t *testing.T) {
 					proxyDefaultsEntry, ok := entry.(*api.ProxyConfigEntry)
 					require.True(r, ok, "could not cast to ProxyConfigEntry")
 					require.Equal(r, api.MeshGatewayModeRemote, proxyDefaultsEntry.MeshGateway.Mode)
+
+					// mesh
+					entry, _, err = consulClient.ConfigEntries().Get(api.MeshConfig, "mesh", nil)
+					require.NoError(r, err)
+					meshEntry, ok := entry.(*api.MeshConfigEntry)
+					require.True(r, ok, "could not cast to MeshConfigEntry")
+					require.False(r, meshEntry.TransparentProxy.CatalogDestinationsOnly)
 
 					// service-router
 					entry, _, err = consulClient.ConfigEntries().Get(api.ServiceRouter, "router", nil)
@@ -246,6 +263,9 @@ func TestController(t *testing.T) {
 				logger.Log(t, "deleting proxy-defaults custom resource")
 				k8s.RunKubectl(t, ctx.KubectlOptions(t), "delete", "proxydefaults", "global")
 
+				logger.Log(t, "deleting mesh custom resource")
+				k8s.RunKubectl(t, ctx.KubectlOptions(t), "delete", "mesh", "mesh")
+
 				logger.Log(t, "deleting service-router custom resource")
 				k8s.RunKubectl(t, ctx.KubectlOptions(t), "delete", "servicerouter", "router")
 
@@ -275,6 +295,11 @@ func TestController(t *testing.T) {
 
 					// proxy-defaults
 					_, _, err = consulClient.ConfigEntries().Get(api.ProxyDefaults, "global", nil)
+					require.Error(r, err)
+					require.Contains(r, err.Error(), "404 (Config entry not found")
+
+					// mesh
+					_, _, err = consulClient.ConfigEntries().Get(api.MeshConfig, "mesh", nil)
 					require.Error(r, err)
 					require.Contains(r, err.Error(), "404 (Config entry not found")
 

@@ -21,6 +21,7 @@ rules:
   - serviceintentions
   - ingressgateways
   - terminatinggateways
+  - meshes
   verbs:
   - create
   - delete
@@ -40,6 +41,7 @@ rules:
   - serviceintentions/status
   - ingressgateways/status
   - terminatinggateways/status
+  - meshes/status
   verbs:
   - get
   - patch
